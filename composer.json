@@ -11,7 +11,7 @@
     }
   ],
   "require": {
-    "php": "^7.3|^8.0",
+    "php": ">=7.3",
     "ext-json": "*",
     "ext-mongodb": "*",
     "ext-mbstring": "*",
