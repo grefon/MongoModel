@@ -18,6 +18,6 @@
     "mongodb/mongodb": "^1.5.1"
   },
   "autoload": {
-    "files": ["src/MongoDB.php", "src/ModelMongoDb.php"]
+    "files": ["src/MongoDB.php", "src/ModelMongoDB.php"]
   }
 }
