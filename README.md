@@ -6,7 +6,7 @@
 
 ### Composer
 
-Install this package through [Composer].
+Install this package through [Composer](https://getcomposer.org/).
 Edit `require` in your project `composer.json`:
 ```json
 {
