@@ -1,0 +1,23 @@
+{
+  "name": "grefon/mongo-model",
+  "description": "MongoDb Model",
+  "homepage": "https://github.com/grefon/MongoModel",
+  "license": "MIT",
+  "keywords": ["database", "mongodb", "model"],
+  "authors": [
+    {
+      "name": "Mikhael Grefon",
+      "email": "mikhael@grefon.com"
+    }
+  ],
+  "require": {
+    "php": "^7.3|^8.0",
+    "ext-json": "*",
+    "ext-mongodb": "*",
+    "ext-mbstring": "*",
+    "mongodb/mongodb": "^1.5.1"
+  },
+  "autoload": {
+    "classmap": ["src/MongoDB.php", "src/ModelMongoDb.php"]
+  }
+}
