@@ -43,6 +43,8 @@ class MongoDB
 
 
 	/**
+	 * Initializing
+	 *
 	 * @param Client $client - MongoDB Client
 	 * @param string $base   - base name
 	 * @param bool   $debug  - debug
