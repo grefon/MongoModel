@@ -263,11 +263,19 @@ abstract class ModelMongoDB
 
 			foreach ($data as $key => $value) {
 
-				if (isset($fieldsModel[$key]) or strpos($key, '$') === 0 or strpos($key, '.') > 0 or $key === '_id') {
+				if (isset($fieldsModel[$key]) or strpos($key, '$') === 0 or strpos($key, '.') > 0 or $key === '_id' or $key === $className::$primaryKey) {
 
-					if ($key === '_id' and is_string($value) and mb_strlen($value, 'utf-8') === 24) {
+					if ($key === '_id' or $key === $className::$primaryKey) {
 
-						$request[$key] = new ObjectId($value);
+						if (is_string($value) and mb_strlen($value, 'utf-8') === 24) {
+
+							$request['_id'] = new ObjectId($value);
+
+						} else {
+
+							$request['_id'] = $value;
+
+						}
 
 					} else {
 
@@ -417,9 +425,25 @@ abstract class ModelMongoDB
 
 				foreach ($data as $key => $value) {
 
-					if (isset($fieldsModel[$key]) or strpos($key, '$') === 0 or strpos($key, '.') > 0 or $key === '_id') {
+					if (isset($fieldsModel[$key]) or strpos($key, '$') === 0 or strpos($key, '.') > 0 or $key === '_id' or $key === $className::$primaryKey) {
 
-						$request[$key] = $value;
+						if ($key === '_id' or $key === $className::$primaryKey) {
+
+							if (is_string($value) and mb_strlen($value, 'utf-8') === 24) {
+
+								$request['_id'] = new ObjectId($value);
+
+							} else {
+
+								$request['_id'] = $value;
+
+							}
+
+						} else {
+
+							$request[$key] = $value;
+
+						}
 
 						$hasData = true;
 
