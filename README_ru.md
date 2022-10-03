@@ -18,7 +18,7 @@ MongoModel работает с [MongoDB PHP Library](https://github.com/mongodb/
 
 Установите этот пакет с помощью [Composer](https://getcomposer.org/).
 Отредактируйте `require` в Вашем `composer.json`:
-```json
+```JSON
 {
     "require": {
         "grefon/mongo-model": "dev-main"
@@ -31,12 +31,12 @@ MongoModel работает с [MongoDB PHP Library](https://github.com/mongodb/
 
 запустите эту команду в командной строке:
 
-```bash
+```BASH
 composer require grefon/mongo-model
 ```
 
 ### Инициализация подключения
-```php
+```PHP
 // Загрузка composer
 require __DIR__ . '/vendor/autoload.php';
 
@@ -61,7 +61,7 @@ MongoDB::init(new Client('mongodb://127.0.0.1/'), 'baseName', true);
 
 Создайте новый PHP класс `User` расширяющий `ModelMongoDB`:
 
-```php
+```PHP
 /**
  * User Class
  *
@@ -134,28 +134,28 @@ _При извлечении данных из MongoDB или сохранени
 | **historyValue**   | Указывает значение, которое необходимо писать в историю.                                                                                                                       |
 
 ## Создание нового объекта
-```php
+```PHP
 $user = new User(['name' => 'Will', 'surname' => 'Smith']);
 $user->save();
 ```
 или
-```php
+```PHP
 $user = new User();
 $user->name = 'Will';
 $user->surname = 'Smith';
 $user->save();
 ```
 или
-```php
+```PHP
 $user = new User();
 $user->save(['name' => 'Will', 'surname' => 'Smith']);
 ```
 или
-```php
+```PHP
 $user = User::new(['name' => 'Will', 'surname' => 'Smith'], false);
 ```
 В каждом из этих примеров в MongoDB будет создан новый документ:
-```json
+```JSONiq
 {
     "_id" : ObjectId("63399434089c8c26344ff2df"),
     "surname" : "Smith",
@@ -168,10 +168,10 @@ $user = User::new(['name' => 'Will', 'surname' => 'Smith'], false);
 }
 ```
 Так же возможно создавать документы с собственным ID
-```php
+```PHP
 $userID = User::new(['userId' => 'user123', 'name' => 'Ban', 'rating' => 15]);
 ```
-```json
+```JSONiq
 {
     "_id" : "user123",
     "surname" : null,
@@ -190,20 +190,20 @@ _Если ID будет длинной 24 символа, то будет про
 ## Операции с объектом
 ### Загрузка
 **По ID**
-```php
+```PHP
 $user = User::get('63399434089c8c26344ff2df');
 ```
 **По свойствам**
-```php
+```PHP
 $user = User::get(['name' => 'Ban', 'rating' => ['$gte' => 10]]);
 ```
 При загрузке по свойствам происходит проверка на существования искомых полей `name` и `rating` в `$fieldsModel`. 
 Возможен поиск по внутренним свойствам если в ключе есть точка:
-```php
+```PHP
 $user = User::get(['phones.number' => 123456789);
 ```
 Так же можно искать по синтаксису MongoDB, если ключ начинается с $:
-```php
+```PHP
 // Будет возвращен первый найденный документ с рейтингом меньше нуля или забаненный
 $user = User::get(['$or' => [['rating' => ['$lt' => 0]], ['ban' => true]]);
 ```
@@ -211,7 +211,7 @@ $user = User::get(['$or' => [['rating' => ['$lt' => 0]], ['ban' => true]]);
 
 ### Метод getArray
 `getArray($includeField = null, bool $skipHidden = true)`
-```php
+```PHP
 if ($user = User::get('63399434089c8c26344ff2df')) {
 
     print_r($user->getArray());
@@ -235,7 +235,7 @@ if ($user = User::get('63399434089c8c26344ff2df')) {
 **$includeField**
 
 Вы можете передать один атрибут или массив атрибутов, которые указаны для полей в `$fieldsModel`. Например:
-```php
+```PHP
 // Вернет только поля, у которых указано required в атрибутах
 $user->getArray('required');
 
@@ -246,7 +246,7 @@ $user->getArray(['card', 'short']);
 `save(array $data = null)`
 
 Метод сохраняет текущий экземпляр объекта в документ MongoDB.
-```php
+```PHP
 if ($user = User::get('63399434089c8c26344ff2df')) {
 
     $user->rating = '20'; // строка будет преобразована в int
@@ -254,7 +254,7 @@ if ($user = User::get('63399434089c8c26344ff2df')) {
     
 }
 ```
-```json
+```JSONiq
 {
     "_id" : ObjectId("63399434089c8c26344ff2df"),
     "surname" : "Smith",
@@ -272,7 +272,7 @@ _Если объект обновляется, а не создается впе
 `save(array $data = null)`
 
 Метод сохраняет текущий экземпляр объекта в документ MongoDB.
-```php
+```PHP
 if ($user = User::get('63399434089c8c26344ff2df')) {
 
     $user->rating = '20'; // строка будет преобразована в int
@@ -280,7 +280,7 @@ if ($user = User::get('63399434089c8c26344ff2df')) {
     
 }
 ```
-```json
+```JSONiq
 {
     "_id" : ObjectId("63399434089c8c26344ff2df"),
     "surname" : "Smith",
@@ -301,13 +301,13 @@ _Если объект обновляется, а не создается впе
 
 _Метод облегченного сохранения, он быстрее, так как не производится создание истории изменений._
 
-```php
+```PHP
 $user->email = 'test@test.com';
 $user->rating = 50;
 $user->saveField('rating');
 ```
 или
-```php
+```PHP
 $user->email = 'test@test.com';
 $user->saveField('rating', 50);
 ```
@@ -322,7 +322,7 @@ $user->saveField('rating', 50);
 
 _Метод облегченного сохранения, он быстрее, так как не производится создание истории изменений._
 
-```php
+```PHP
 $user->surname = 'TEST';
 $user->email = 'test@test.com';
 $user->rating = 50;
@@ -334,12 +334,12 @@ $user->saveFields('rating');
 $user->saveFields(['rating', 'email']);
 ```
 В собственных методах класса `User` Вы можете пополнять массив protected changedFields
-```php
+```PHP
 
 class User extends ModelMongoDB
 {
 
-    myMethod() {
+    function myMethod() {
         
         $this->rating = 100;
         $this->email = null
