@@ -399,12 +399,13 @@ abstract class ModelMongoDB
 	/**
 	 * Building database query
 	 *
-	 * @param mixed $data - request body
+	 * @param mixed  $data   - request body
+	 * @param string $method - method name
 	 *
 	 * @return array
 	 * @throws Exception
 	 */
-	static private function itemsBuildRequest($data): array
+	static private function itemsBuildRequest($data, string $method): array
 	{
 
 		/**
@@ -491,66 +492,11 @@ abstract class ModelMongoDB
 
 		if (!$hasData) {
 
-			throw new Exception('Invalid $data on "itemsGet"');
+			throw new Exception('Invalid $data on "' . $method . '"');
 
 		}
 
 		return $request;
-
-	}
-
-
-	/**
-	 * Check existence objects matching the query
-	 *
-	 * @param null|string|int|array $data - request body
-	 *
-	 * @return bool
-	 * @throws Exception
-	 */
-	static public function itemsHas($data = null): bool
-	{
-
-		/**
-		 * @var self $className
-		 */
-		$className = get_called_class();
-
-		$data = MongoDB::execute($className::getCollection(), 'findOne', self::itemsBuildRequest($data), [
-			'projection' => [
-				'_id' => 1
-			]
-		]);
-
-		if ($data and isset($data->_id) and $data->_id) {
-
-			return true;
-
-		}
-
-		return false;
-
-	}
-
-
-	/**
-	 * Return counts objects matching the query
-	 *
-	 * @param null|string|int|array $data     - request body
-	 * @param null|array            $settings - overlay options parameters
-	 *
-	 * @return int
-	 * @throws Exception
-	 */
-	static public function itemsCount($data = null, array $settings = []): int
-	{
-
-		/**
-		 * @var self $className
-		 */
-		$className = get_called_class();
-
-		return MongoDB::execute($className::getCollection(), 'countDocuments', self::itemsBuildRequest($data), $settings);
 
 	}
 
@@ -576,7 +522,7 @@ abstract class ModelMongoDB
 		$className = get_called_class();
 		$fieldsModel = $className::$fieldsModel;
 		$collection = $className::getCollection();
-		$request = self::itemsBuildRequest($data);
+		$request = self::itemsBuildRequest($data, 'itemsGet');
 		$options = [
 			'skip'  => 0,
 			'limit' => 0
@@ -771,6 +717,61 @@ abstract class ModelMongoDB
 
 
 	/**
+	 * Check existence objects matching the query
+	 *
+	 * @param null|string|int|array $data - request body
+	 *
+	 * @return bool
+	 * @throws Exception
+	 */
+	static public function itemsHas($data = null): bool
+	{
+
+		/**
+		 * @var self $className
+		 */
+		$className = get_called_class();
+
+		$data = MongoDB::execute($className::getCollection(), 'findOne', self::itemsBuildRequest($data, 'itemsHas'), [
+			'projection' => [
+				'_id' => 1
+			]
+		]);
+
+		if ($data and isset($data->_id) and $data->_id) {
+
+			return true;
+
+		}
+
+		return false;
+
+	}
+
+
+	/**
+	 * Return counts objects matching the query
+	 *
+	 * @param null|string|int|array $data     - request body
+	 * @param null|array            $settings - overlay options parameters
+	 *
+	 * @return int
+	 * @throws Exception
+	 */
+	static public function itemsCount($data = null, array $settings = []): int
+	{
+
+		/**
+		 * @var self $className
+		 */
+		$className = get_called_class();
+
+		return MongoDB::execute($className::getCollection(), 'countDocuments', self::itemsBuildRequest($data, 'itemsCount'), $settings);
+
+	}
+
+
+	/**
 	 * Removing one or more objects from database
 	 *
 	 * @param mixed $data - request
@@ -781,80 +782,12 @@ abstract class ModelMongoDB
 	static public function itemsDelete($data = null): int
 	{
 
-		$hasData = false;
-
 		/**
 		 * @var self $className
 		 */
 		$className = get_called_class();
-		$fieldsModel = $className::$fieldsModel;
-		$request = [];
 
-		if (is_null($data)) {
-
-			$hasData = true;
-
-		} elseif (is_array($data)) {
-
-			if (self::isAssocArray($data)) {
-
-				foreach ($data as $key => $value) {
-
-					if (isset($className::$fieldsModel[$key])) {
-
-						$request[$key] = $value;
-
-						$hasData = true;
-
-					}
-
-				}
-
-			} else {
-
-				$request['_id'] = [
-					'$in' => array_map(function($id) {
-
-						if (is_string($id) and mb_strlen($id, 'utf-8') === 24) {
-
-							return new ObjectId($id);
-
-						} else {
-
-							return $id;
-
-						}
-
-					}, $data)
-				];
-
-				$hasData = true;
-
-			}
-
-		} elseif ($data) {
-
-			if (is_string($data) and mb_strlen($data, 'utf-8') === 24) {
-
-				$request['_id'] = new ObjectId($data);
-
-			} else {
-
-				$request['_id'] = $data;
-
-			}
-
-			$hasData = true;
-
-		}
-
-		if (!$hasData) {
-
-			throw new Exception('Invalid $data on "itemsDelete"');
-
-		}
-
-		return MongoDB::execute($className::getCollection(), 'deleteMany', $request)->getDeletedCount();
+		return MongoDB::execute($className::getCollection(), 'deleteMany', self::itemsBuildRequest($data, 'itemsDelete'))->getDeletedCount();
 
 	}
 
@@ -1398,6 +1331,8 @@ abstract class ModelMongoDB
 		$this->changedFields = array_values(array_diff(array_unique($this->changedFields), ['', null]));
 
 		if (count($this->changedFields)) {
+
+			$this->preSave();
 
 			$fieldsModel = $this::$fieldsModel;
 			$data = [];
