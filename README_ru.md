@@ -136,6 +136,8 @@ _При извлечении данных из MongoDB или сохранени
 | **historyValue**   | Указывает значение, которое необходимо писать в историю.                                                                                                                                   |
 
 ## Создание нового объекта
+
+Пример: [examples/new.php](examples/new.php)
 ```PHP
 $user = new User(['name' => 'Will', 'surname' => 'Smith']);
 $user->save();
@@ -194,6 +196,8 @@ _Если ID будет длинной 24 символа, то будет про
 ## Операции с объектом
 ### Загрузка
 `YourModelClass::get($data)`
+
+Пример: [examples/get.php](examples/get.php)
 #### По ID
 ```PHP
 $user = User::get('63399434089c8c26344ff2df');
@@ -217,6 +221,8 @@ $user = User::get(['$or' => [['rating' => ['$lt' => 0]], ['ban' => true]]]);
 ### Метод save
 `save(array $data = null)`
 
+Пример: [examples/save.php](examples/save.php)
+
 Метод сохраняет текущий экземпляр объекта в документ MongoDB. В базу данных отправляются только измененные свойства.
 ```PHP
 if ($user = User::get('63399434089c8c26344ff2df')) {
@@ -238,10 +244,12 @@ if ($user = User::get('63399434089c8c26344ff2df')) {
     "timeUpdate" : ISODate("2022-10-02T14:12:02.000+0000")
 }
 ```
-_Если объект обновляется, а не создается впервые, то свойства с атрибутом `onlyCreation` игнорируются._
+_Если объект обновляется, а не создается впервые, то свойства с атрибутом `onlyCreation` игнорируются, а с атрибутом `history` проверяются на изменение и записываются в историю._
 
 ### Метод saveField
 `saveField(string $field, $value = '__EMPTY__')`
+
+Пример: [examples/save.php](examples/save.php)
 
 Сохранить в MongoDB только одно свойство текущего объекта.
 
@@ -261,6 +269,8 @@ $user->saveField('rating', 50);
 
 ### Метод saveFields
 `saveFields($fields = null)`
+
+Пример: [examples/save.php](examples/save.php)
 
 Сохранить в MongoDB только определенные свойства текущего объекта.
 
@@ -322,6 +332,8 @@ if ($user = User::get('63399434089c8c26344ff2df')) {
 ### Метод delete
 `delete()`
 
+Пример: [examples/delete.php](examples/delete.php)
+
 Удаляет документ из MongoDB
 ```PHP
 if ($user = User::get('63399434089c8c26344ff2df')) {
@@ -333,6 +345,8 @@ if ($user = User::get('63399434089c8c26344ff2df')) {
 
 ### Метод getArray
 `getArray($includeField = null, bool $skipHidden = true)`
+
+Пример: [examples/getArray.php](examples/getArray.php)
 ```PHP
 if ($user = User::get('63399434089c8c26344ff2df')) {
 
@@ -368,7 +382,9 @@ $user->getArray(['card', 'short']);
 ### Загрузка с кешированием
 `YourModelClass::getFromCache($data)`
 
-При загрузке с кешированием экземпляр объекта хранится в памяти и при повторной загрузке не происходит повторного обращения к MongoDB. Как и в методе [get()](#загрузка) можно загружать по ID или свойствам.
+Пример: [examples/getFromCache.php](examples/getFromCache.php)
+
+При загрузке с кешированием экземпляр объекта хранится в памяти и при повторной загрузке не происходит обращения к MongoDB. Как и в методе [get()](#загрузка) можно загружать по ID или свойствам.
 
 Полезно при работе с объектом в разных участках кода.
 
@@ -409,6 +425,8 @@ if ($email or $name) {
 ## Операции с объектами
 ### Метод itemsGet
 `YourModelClass::itemsGet($data = null, $fields = null, $orderBy = null, $limited = null, array $settings = [])`
+
+Пример: [examples/itemsGet.php](examples/itemsGet.php)
 
 Найти документы в MongoDB и вернуть массив экземпляров объектов или их определенные свойства.
 
@@ -458,11 +476,11 @@ foreach (User::itemsGet(['name' => 'Will'], 'rating') as $userId => $rating) {
 }
 ```
 
-Если в **$fields** передать массив свойств, то в результат `itemsGet` будет возвращен ассоциативный массив с указанными полями.
+Если в **$fields** передать массив свойств, то в результат `itemsGet` будет возвращен ассоциативный массив, где ключ будет **_id**, а значение **stdClass** с указанными полями.
 ```PHP
-foreach (User::itemsGet(['name' => 'Will'], ['name', 'surname', 'rating']) as $userId => $data) {
+foreach (User::itemsGet(['name' => 'Will'], ['name', 'surname', 'rating']) as $userId => $item) {
 
-    echo $data['name'] . ' ' . $data['surname'] . ' has a rating ' . $data['rating'];
+    echo $item->name . ' ' . $item->surname . ' has a rating ' . $item->rating;
     // Will Smith has a rating 10
     // Will Duk has a rating 7
     // ..........
@@ -505,6 +523,8 @@ User::itemsGet(['name' => 'Will'], null, 'rating', 10, ['hint' => 'index_name_ra
 ### Метод itemsHas
 `YourModelClass::itemsHas($data = null)`
 
+Пример: [examples/itemsHas.php](examples/itemsHas.php)
+
 Проверить, существуют ли документы в коллекции по заданным условиям.
 
 В **$data** передаются [данные для поиска](#данные-для-поиска), как в методе [itemsGet](#метод-itemsget).
@@ -522,6 +542,8 @@ if (User::itemsHas(['email' => 'mail@test.com'])) {
 ### Метод itemsCount
 `YourModelClass::itemsCount($data = null, array $settings = [])`
 
+Пример: [examples/itemsCount.php](examples/itemsCount.php)
+
 Возвращает количество документов соответствующих запросу.
 
 В **$data** передаются [данные для поиска](#данные-для-поиска), как в методе [itemsGet](#метод-itemsget).
@@ -538,6 +560,8 @@ echo User::itemsCount(['rating' => ['$gt' => 100]], ['hint' => 'my_index', 'limi
 
 ### Метод itemsDelete
 `YourModelClass::itemsDelete($data = null)`
+
+Пример: [examples/itemsDelete.php](examples/itemsDelete.php)
 
 Удаляет из коллекции все документы, соответствующие запросу.
 
@@ -559,10 +583,10 @@ echo User::itemsDelete(['rating' => ['$lt' => 0]]);
 
 Метод аналогичен методу `YourModelClass::new()` с той лишь разницей, что первым аргументом передается массив массивов данных.
 
-Возвращает массив ID созданных объектов или, если **$returnID** = false массив объектов.
+Возвращает массив ID созданных объектов или массив объектов (если $returnID = false).
 
 ```PHP
-$users = User::itemsNew(
+$newUsersID = User::itemsNew(
     [
         [
             'name'   => 'Ben',
@@ -580,6 +604,113 @@ $users = User::itemsNew(
 ----------------------------------------
 
 ## История изменений
+
+При сохранении объекта методом [save()](#метод-save) происходит создание истории изменений. История записывается в свойство объекта с типом `history`. Проверку на изменение проходят те свойства, у которых в атрибутах указано `history`.
+
+```PHP
+class User extends ModelMongoDB
+{
+
+    static public $fieldsModel = [
+        'userId'  => ['string'],
+        'surname' => ['string'],                                          // НЕ отслеживаем изменения
+        'name'    => ['string', 'required'],                              // НЕ отслеживаем изменения
+        'email'   => ['string', 'history'],                               // Отслеживаем изменения
+        'phones'  => ['array', 'history',                                 // Отслеживаем изменения
+                      'historyPrepare' => 'historyPrepareArray:number', 
+                      'historyValue' => 'historyValuePhones'
+                     ],
+        'history' => ['history']                                          // Массив истории
+    ];
+
+}
+```
+
+Если свойства объекта с атрибутом `history` изменились, то в массив историй будет добавлена запись с датой изменения и объектом `changes`, в котором будут перечислены все изменившиеся свойства. Кажодое свойство - это массив с двумя элементами array(было, стало).
+
+```json
+{
+    "datetime" : "2022-10-05 17:48:41",
+    "changes" : {
+        "phones" : [
+            [],
+            ["(+1) 555331188"]
+        ],
+        "email" : [
+            "test@gmail.com",
+            "email@gmail.com"
+        ]
+    }
+}
+```
+
+### Атрибут historyPrepare
+В атрибуте `historyPrepare` Вы можете указывать свой метод, которым будет производится сравнение `было` === `стало`
+
+Помимо простых типов данных (string, int, float, bool) существуют 2 метода:
+
+- **historyPrepareArray** для сравнения массивов
+- **historyPrepareObject** для сравнения объектов
+
+В уже заготовленные `historyPrepareArray` и `historyPrepareObject` методы и в Ваш собственный метод из атрибута `historyPrepare` будет передаваться два атрибута:
+1) значение, которое нужно как-то стандартизировать
+2) необязательная переменная из значения атрибута после двоеточия. Например, будет передан number в `'historyPrepare' => 'historyPrepareArray:number'`
+
+Давайте представим, что у пользователя есть свойство phones - это массив объектов stdClass с телефонами:
+
+```json
+[
+    {
+        "code" : 1,
+        "phone" : 555331188,
+        "number" : 1555331188,
+        "formatted" : "(+1) 555331188",
+        "timeAdd" : "2022-10-05 17:48:41"
+    },
+    {
+        "code" : 12,
+        "phone" : 7774477,
+        "number" : 127774477,
+        "formatted" : "(+1) 7774477",
+        "timeAdd" : "2022-10-05 19:31:02"
+    }
+]
+```
+
+Из указанного примера `'historyPrepare' => 'historyPrepareArray:number'` массив телефонов будет сравниваться по полю `number`. При сохранении метод `historyPrepareArray` преобразует данные для сравнения в строку `[127774477,1555331188]`. Такое же преобразование выполнится с данными из снимка после последнего сохранения. Далее сравнение и запись в историю, если есть изменения.
+
+
+### Атрибут historyValue
+
+Указывает на Ваш **собственный** метод, который обработает и вернет значение для записи в историю.
+
+Смотрите пример: [examples/User.php](examples/User.php#L123)
+
+### Метод checkRecordHistory
+`checkRecordHistory(array $changes)`
+
+По умолчанию возвращает **true**; Если вернет **false** - история изменений не добавится.
+
+Вызывается во время сохранения, когда уже составлена история изменений.
+
+В **$changes** передаются текущие изменения.
+
+Метод полезен, если Вам нужно вести историю изменений, но при каких-то обстоятельствах иногда ее не записывать.
+
+Например, Вы можете проверять размер текущей истории и не писать больше 100 записей:
+
+```PHP
+class User extends ModelMongoDB
+{
+
+    protected function checkRecordHistory($changes) {
+
+        return count($this->history) < 100;    
+    
+    }
+
+}
+```
 
 
 ----------------------------------------
@@ -635,7 +766,7 @@ if ($user = User::get('63399434089c8c26344ff2df')) {
     echo $user->getSnapshot('name'); // Выведет Will
     echo $user->getSnapshotUpdate('name'); // Выведет Will
     
-    // Сохраняем имя  Jack
+    // Сохраняем имя Jack
     $user->saveFields('name');
     
     $user->name = 'Bob';
@@ -669,4 +800,27 @@ MongoDB::execute(User::getCollection(), 'updateMany', [
         'ban' => true
     ]
 ]);
+```
+
+### Метод collectionInfo
+`MongoDB::collectionInfo(string $collection)`
+
+Пример: [examples/getCollection.php](examples/getCollection.php)
+
+Возвращает информацию о коллекции.
+```PHP
+use MongoModel\MongoDB;
+
+print_r(MongoDB::collectionInfo('users'));
+```
+```
+stdClass Object
+(
+    [count] => 27
+    [storageSize] => 36864
+    [indexSize] => 36864
+    [indexCount] => 1
+    [size] => 6189
+    [avgObjSize] => 229
+)
 ```

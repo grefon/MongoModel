@@ -102,7 +102,7 @@ class User extends ModelMongoDB
 		$item->code = $code;
 		$item->phone = $phone;
 		$item->number = intval($code . $phone);
-		$item->formated = '(+' . $code . ') ' . $phone;
+		$item->formatted = '(+' . $code . ') ' . $phone;
 		$item->timeAdd = date('Y-m-d H:i:s');
 
 		$this->phones[] = $item;
@@ -129,7 +129,7 @@ class User extends ModelMongoDB
 
 			foreach ($phones as $phone) {
 
-				$result[] = $phone->formated;
+				$result[] = $phone->formatted;
 
 			}
 
