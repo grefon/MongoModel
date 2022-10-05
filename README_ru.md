@@ -142,14 +142,14 @@ $user->save();
 ```
 или
 ```PHP
-$user = new User();
+$user = new User;
 $user->name = 'Will';
 $user->surname = 'Smith';
 $user->save();
 ```
 или
 ```PHP
-$user = new User();
+$user = new User;
 $user->save(['name' => 'Will', 'surname' => 'Smith']);
 ```
 или
@@ -210,7 +210,7 @@ $user = User::get(['phones.number' => 123456789);
 Так же можно искать по синтаксису MongoDB, если ключ начинается с $:
 ```PHP
 // Будет возвращен первый найденный документ с рейтингом меньше нуля или забаненный
-$user = User::get(['$or' => [['rating' => ['$lt' => 0]], ['ban' => true]]);
+$user = User::get(['$or' => [['rating' => ['$lt' => 0]], ['ban' => true]]]);
 ```
 Если документ не будет найден в MongoDB `User::get` вернет `null`.
 
@@ -286,7 +286,7 @@ class User extends ModelMongoDB
 
     function changeEmail(string $email) {
         
-        $this->email = $email
+        $this->email = $email;
         $this->changedFields[] = 'email';
         return $this;
     
@@ -408,7 +408,7 @@ if ($email or $name) {
 
 ## Операции с объектами
 ### Метод itemsGet
-`itemsGet($data = null, $fields = null, $orderBy = null, $limited = null, array $settings = [])`
+`YourModelClass::itemsGet($data = null, $fields = null, $orderBy = null, $limited = null, array $settings = [])`
 
 Найти документы в MongoDB и вернуть массив экземпляров объектов или их определенные свойства.
 
@@ -503,7 +503,7 @@ User::itemsGet(['name' => 'Will'], null, 'rating', 10, ['hint' => 'index_name_ra
 ```
 
 ### Метод itemsHas
-`itemsHas($data = null)`
+`YourModelClass::itemsHas($data = null)`
 
 Проверить, существуют ли документы в коллекции по заданным условиям.
 
@@ -520,7 +520,7 @@ if (User::itemsHas(['email' => 'mail@test.com'])) {
 ```
 
 ### Метод itemsCount
-`itemsCount($data = null, array $settings = [])`
+`YourModelClass::itemsCount($data = null, array $settings = [])`
 
 Возвращает количество документов соответствующих запросу.
 
@@ -537,7 +537,7 @@ echo User::itemsCount(['rating' => ['$gt' => 100]], ['hint' => 'my_index', 'limi
 ```
 
 ### Метод itemsDelete
-`itemsDelete($data = null)`
+`YourModelClass::itemsDelete($data = null)`
 
 Удаляет из коллекции все документы, соответствующие запросу.
 
@@ -550,7 +550,32 @@ echo User::itemsCount(['rating' => ['$gt' => 100]], ['hint' => 'my_index', 'limi
 echo User::itemsDelete(['rating' => ['$lt' => 0]]);
 ```
 
+### Метод itemsNew
+`YourModelClass::itemsNew(array $items, bool $returnID = true)`
 
+Пример: [examples/itemsNew.php]()
+
+Создает несколько объектов и делает вставку `insertMany` в MongoDB.
+
+Метод аналогичен методу `YourModelClass::new()` с той лишь разницей, что первым аргументом передается массив массивов данных.
+
+Возвращает массив ID созданных объектов или, если **$returnID** = false массив объектов.
+
+```PHP
+$users = User::itemsNew(
+    [
+        [
+            'name'   => 'Ben',
+            'rating' => 77
+        ],
+        [
+            'name'    => 'Robin',
+            'surname' => 'Collins'
+        ]
+    ],
+    true
+);
+```
 
 ----------------------------------------
 

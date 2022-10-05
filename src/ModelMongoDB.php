@@ -12,12 +12,12 @@ use stdClass;
 /**
  * Class ModelMongoDB
  *
- * @property boolean       isNew
- * @property null|stdClass snapshot
- * @property null|stdClass snapshotUpdate
- * @property array         changedFields
- * @property array         history
- * @property float         score
+ * @property boolean  isNew
+ * @property stdClass snapshot
+ * @property stdClass snapshotUpdate
+ * @property array    changedFields
+ * @property array    history
+ * @property float    score
  *
  * @package MongoModel
  */
@@ -39,7 +39,6 @@ abstract class ModelMongoDB
 	 * @var stdClass $snapshotUpdate - snapshot after update
 	 */
 	protected $snapshotUpdate;
-
 
 	/**
 	 * @var array $changedFields - array of changed fields
@@ -95,6 +94,235 @@ abstract class ModelMongoDB
 
 
 	/**
+	 * Get default Value
+	 *
+	 * @param $attrs
+	 *
+	 * @return mixed
+	 */
+	static protected function valueDefault($attrs)
+	{
+
+		$value = null;
+
+		if (isset($attrs['default'])) {
+
+			if ($attrs['default'] === 'object') {
+
+				$value = new stdClass();
+
+			} elseif ($attrs['default'] === 'array') {
+
+				$value = [];
+
+			} else {
+
+				$value = $attrs['default'];
+
+			}
+
+		} elseif ($attrs[0] === 'object') {
+
+			$value = new stdClass();
+
+		} elseif ($attrs[0] === 'array' or $attrs[0] === 'history') {
+
+			$value = [];
+
+		}
+
+		return $value;
+
+	}
+
+
+	/**
+	 * Convert value received from database
+	 *
+	 * @param mixed $value - value in database
+	 * @param array $attrs - array of attributes
+	 *
+	 * @return array|bool|float|int|stdClass|null
+	 */
+	static protected function valueFromBase($value, array $attrs)
+	{
+
+		if ($value === 'unIsset') {
+
+			$value = self::valueDefault($attrs);
+
+		}
+
+		if (!is_null($value)) {
+
+			if ($attrs[0] === 'int') {
+
+				$value = @intval($value);
+
+			} elseif ($attrs[0] === 'float') {
+
+				$value = @floatval($value);
+
+			} elseif ($attrs[0] === 'bool' or $attrs[0] === 'boolean') {
+
+				$value = @boolval($value);
+
+			} elseif ($attrs[0] === 'object') {
+
+				if (!empty($value)) {
+
+					$json = @json_decode(@json_encode($value));
+					$value = is_object($value) ? $json : new stdClass();
+
+				}
+
+			} elseif ($attrs[0] === 'array' or $attrs[0] === 'history') {
+
+				if (!empty($value)) {
+
+					$json = @json_decode(@json_encode($value));
+					$value = is_array($value) ? $json : [];
+
+				}
+
+			} elseif ($attrs[0] === 'datetime' and is_object($value)) {
+
+				$value = $value->toDateTime()->setTimezone(new DateTimeZone(date_default_timezone_get()))->format('Y-m-d H:i:s');
+
+			}
+
+		}
+
+		return $value;
+
+	}
+
+
+	/**
+	 * Build request by array data
+	 *
+	 * @param array   $data    - data
+	 * @param array   $request - generated request
+	 * @param boolean $hasData - has request data
+	 *
+	 * @return void
+	 */
+	static private function buildRequestByArray(array $data, array &$request, bool &$hasData)
+	{
+
+		/**
+		 * @var self $className
+		 */
+		$className = get_called_class();
+		$fieldsModel = $className::$fieldsModel;
+		$primaryKey = $className::$primaryKey;
+
+		foreach ($data as $key => $value) {
+
+			if (isset($fieldsModel[$key]) or strpos($key, '$') === 0 or strpos($key, '.') > 0 or $key === '_id' or $key === $primaryKey) {
+
+				if ($key === '_id' or $key === $primaryKey) {
+
+					if (is_string($value) and mb_strlen($value, 'utf-8') === 24) {
+
+						$request['_id'] = new ObjectId($value);
+
+					} else {
+
+						$request['_id'] = $value;
+
+					}
+
+				} else {
+
+					$request[$key] = $value;
+
+				}
+
+				$hasData = true;
+
+			}
+
+		}
+
+	}
+
+
+	/**
+	 * Building database query
+	 *
+	 * @param mixed  $data   - request body
+	 * @param string $method - method name
+	 *
+	 * @return array
+	 * @throws Exception
+	 */
+	static private function itemsBuildRequest($data, string $method): array
+	{
+
+		$hasData = false;
+		$request = [];
+
+		if (is_null($data)) {
+
+			$hasData = true;
+
+		} elseif (is_array($data)) {
+
+			if (self::isAssocArray($data)) {
+
+				self::buildRequestByArray($data, $request, $hasData);
+
+			} else {
+
+				$request['_id'] = [
+					'$in' => array_map(function($id) {
+
+						if (is_string($id) and mb_strlen($id, 'utf-8') === 24) {
+
+							return new ObjectId($id);
+
+						} else {
+
+							return $id;
+
+						}
+
+					}, $data)
+				];
+
+				$hasData = true;
+
+			}
+
+		} elseif ($data) {
+
+			if (is_string($data) and mb_strlen($data, 'utf-8') === 24) {
+
+				$request['_id'] = new ObjectId($data);
+
+			} else {
+
+				$request['_id'] = $data;
+
+			}
+
+			$hasData = true;
+
+		}
+
+		if (!$hasData) {
+
+			throw new Exception('Invalid $data on "' . $method . '"');
+
+		}
+
+		return $request;
+
+	}
+
+
+	/**
 	 * Return an instance of a collection
 	 *
 	 * @return Collection
@@ -115,93 +343,6 @@ abstract class ModelMongoDB
 		}
 
 		return $className::$collection;
-
-	}
-
-
-	/**
-	 * Convert value received from database
-	 *
-	 * @param mixed $value - value in database
-	 * @param array $attrs - array of attributes
-	 *
-	 * @return array|bool|float|int|stdClass|null
-	 */
-	static protected function valueFromBase($value, array $attrs)
-	{
-
-		if ($value === 'unIsset') {
-
-			if (isset($attrs['default'])) {
-
-				if ($attrs['default'] === 'object') {
-
-					$value = new stdClass();
-
-				} elseif ($attrs['default'] === 'array') {
-
-					$value = [];
-
-				} else {
-
-					$value = $attrs['default'];
-
-				}
-
-			} elseif ($attrs[0] === 'object') {
-
-				$value = new stdClass();
-
-			} elseif ($attrs[0] === 'array' or $attrs[0] === 'history') {
-
-				$value = [];
-
-			} else {
-
-				$value = null;
-
-			}
-
-		}
-
-		if (!is_null($value)) {
-
-			if ($attrs[0] === 'int') {
-
-				$value = @intval($value);
-
-			} elseif ($attrs[0] === 'float') {
-
-				$value = @floatval($value);
-
-			} elseif ($attrs[0] === 'bool' or $attrs[0] === 'boolean') {
-
-				$value = @boolval($value);
-
-			} elseif ($attrs[0] === 'array' or $attrs[0] === 'history') {
-
-				if (!empty($value)) {
-
-					$json = @json_decode(@json_encode($value));
-					$value = (!is_null($json) and $json !== false) ? $json : [];
-
-					if (!is_array($value)) {
-
-						$value = [];
-
-					}
-
-				}
-
-			} elseif ($attrs[0] === 'datetime' and is_object($value)) {
-
-				$value = $value->toDateTime()->setTimezone(new DateTimeZone(date_default_timezone_get()))->format('Y-m-d H:i:s');
-
-			}
-
-		}
-
-		return $value;
 
 	}
 
@@ -247,45 +388,19 @@ abstract class ModelMongoDB
 	static public function get($data): ?self
 	{
 
-		$hasData = false;
-
 		/**
 		 * @var self $className
 		 */
 		$className = get_called_class();
-		$fieldsModel = $className::$fieldsModel;
-		$request = [];
 
-		$object = new $className;
-		$object->isNew = false;
+		$request = [];
+		$hasData = false;
 
 		if (is_array($data)) {
 
-			foreach ($data as $key => $value) {
+			if (self::isAssocArray($data)) {
 
-				if (isset($fieldsModel[$key]) or strpos($key, '$') === 0 or strpos($key, '.') > 0 or $key === '_id' or $key === $className::$primaryKey) {
-
-					if ($key === '_id' or $key === $className::$primaryKey) {
-
-						if (is_string($value) and mb_strlen($value, 'utf-8') === 24) {
-
-							$request['_id'] = new ObjectId($value);
-
-						} else {
-
-							$request['_id'] = $value;
-
-						}
-
-					} else {
-
-						$request[$key] = $value;
-
-					}
-
-					$hasData = true;
-
-				}
+				self::buildRequestByArray($data, $request, $hasData);
 
 			}
 
@@ -315,6 +430,9 @@ abstract class ModelMongoDB
 
 		if ($data and isset($data->_id) and $data->_id) {
 
+			$object = new $className;
+			$object->isNew = false;
+
 			if (is_object($data->_id)) {
 
 				$object->{$className::$primaryKey} = $data->_id->__toString();
@@ -325,7 +443,7 @@ abstract class ModelMongoDB
 
 			}
 
-			foreach ($fieldsModel as $field => $attrs) {
+			foreach ($className::$fieldsModel as $field => $attrs) {
 
 				if ($field === $className::$primaryKey) {
 
@@ -392,111 +510,6 @@ abstract class ModelMongoDB
 		}
 
 		return self::$cacheGet[$cacheName];
-
-	}
-
-
-	/**
-	 * Building database query
-	 *
-	 * @param mixed  $data   - request body
-	 * @param string $method - method name
-	 *
-	 * @return array
-	 * @throws Exception
-	 */
-	static private function itemsBuildRequest($data, string $method): array
-	{
-
-		/**
-		 * @var self $className
-		 */
-		$className = get_called_class();
-		$fieldsModel = $className::$fieldsModel;
-		$hasData = false;
-		$request = [];
-
-		if (is_null($data)) {
-
-			$hasData = true;
-
-		} elseif (is_array($data)) {
-
-			if (self::isAssocArray($data)) {
-
-				foreach ($data as $key => $value) {
-
-					if (isset($fieldsModel[$key]) or strpos($key, '$') === 0 or strpos($key, '.') > 0 or $key === '_id' or $key === $className::$primaryKey) {
-
-						if ($key === '_id' or $key === $className::$primaryKey) {
-
-							if (is_string($value) and mb_strlen($value, 'utf-8') === 24) {
-
-								$request['_id'] = new ObjectId($value);
-
-							} else {
-
-								$request['_id'] = $value;
-
-							}
-
-						} else {
-
-							$request[$key] = $value;
-
-						}
-
-						$hasData = true;
-
-					}
-
-				}
-
-			} else {
-
-				$request['_id'] = [
-					'$in' => array_map(function($id) {
-
-						if (is_string($id) and mb_strlen($id, 'utf-8') === 24) {
-
-							return new ObjectId($id);
-
-						} else {
-
-							return $id;
-
-						}
-
-					}, $data)
-				];
-
-				$hasData = true;
-
-			}
-
-		} elseif ($data) {
-
-			if (is_string($data) and mb_strlen($data, 'utf-8') === 24) {
-
-				$request['_id'] = new ObjectId($data);
-
-			} else {
-
-				$request['_id'] = $data;
-
-			}
-
-			$hasData = true;
-
-		}
-
-		if (!$hasData) {
-
-			throw new Exception('Invalid $data on "' . $method . '"');
-
-		}
-
-		return $request;
 
 	}
 
@@ -793,6 +806,187 @@ abstract class ModelMongoDB
 
 
 	/**
+	 * Insert one or more objects to database
+	 *
+	 * @param array $items    - items
+	 * @param bool  $returnID - return only ID
+	 *
+	 * @return array
+	 * @throws Exception
+	 */
+	static public function itemsNew(array $items, bool $returnID = true): array
+	{
+
+		if (empty($items)) {
+
+			throw new Exception('Items empty');
+
+		}
+
+		/**
+		 * @var self $className
+		 */
+		$className = get_called_class();
+
+		$objects = [];
+		$objectsID = [];
+		$inserted = [];
+
+		foreach ($items as $item) {
+
+			if (!is_array($item)) {
+
+				throw new Exception('Item is not array');
+
+			}
+
+			$data = [];
+
+			$object = new $className($item);
+			$object->preSave();
+
+			foreach ($className::$fieldsModel as $field => $attrs) {
+
+				$object->buildSaveData($field, $attrs, $data);
+
+			}
+
+			if (isset($data[$className::$primaryKey])) {
+
+				unset($data[$className::$primaryKey]);
+
+			}
+
+			$objects[] = $object;
+			$inserted[] = $data;
+
+		}
+
+		$result = MongoDB::execute($className::getCollection(), 'insertMany', $inserted);
+
+		$ids = $result->getInsertedIds();
+
+		if (count($objects) !== count($ids)) {
+
+			throw new Exception('MongoDB insertMany error');
+
+		}
+
+		foreach ($objects as $index => $object) {
+
+			$id = $ids[$index];
+
+			if (is_object($id)) {
+
+				$id = $id->__toString();
+
+			}
+
+			$object->{$className::$primaryKey} = $id;
+			$object->isNew = false;
+
+			$object->afterSave(array_keys($inserted[$index]));
+			$object->setSnapshot();
+			$object->setSnapshotUpdate();
+
+			$objectsID[] = $id;
+
+		}
+
+		if ($returnID) {
+
+			return $objectsID;
+
+		}
+
+		return $objects;
+
+	}
+
+
+	/**
+	 * Build save data
+	 *
+	 * @param string $field - field
+	 * @param array  $attrs - attributes
+	 * @param array  $data  - data
+	 *
+	 * @return bool
+	 * @throws Exception
+	 */
+	private function buildSaveData(string $field, array $attrs, array &$data): bool
+	{
+
+		if ($field === $this::$primaryKey) {
+
+			if ($this->isNew) {
+
+				if (!empty($this->{$field})) {
+
+					if (is_string($this->{$field}) and mb_strlen($this->{$field}, 'utf-8') === 24) {
+
+						$data['_id'] = new ObjectId($this->{$field});
+
+					} else {
+
+						$data['_id'] = $this->{$field};
+
+					}
+
+				} elseif (in_array('required', $attrs, true)) {
+
+					throw new Exception('Model validate error: $field ' . $field . ' required');
+
+				} else {
+
+					return false;
+
+				}
+
+			} else {
+
+				return false;
+
+			}
+
+		}
+
+		$this->typification($field, $attrs);
+
+		$data[$field] = $this->{$field};
+
+		if ($attrs[0] === 'datetime' and !empty($data[$field])) {
+
+			$data[$field] = new UTCDateTime(strtotime($data[$field]) * 1000);
+
+		}
+
+		if (in_array('timeCreate', $attrs, true) and ($this->isNew or empty($this->{$field}))) {
+
+			$now = time();
+			$this->{$field} = date('Y-m-d H:i:s', $now);
+			$data[$field] = new UTCDateTime($now * 1000);
+
+		} elseif (in_array('timeUpdate', $attrs, true)) {
+
+			$now = time();
+			$this->{$field} = date('Y-m-d H:i:s', $now);
+			$data[$field] = new UTCDateTime($now * 1000);
+
+		}
+
+		if (in_array('required', $attrs, true) and ($data[$field] === null or $data[$field] === '' or $data[$field] === false)) {
+
+			throw new Exception('Model validate error: $field ' . $field . ' required');
+
+		}
+
+		return true;
+
+	}
+
+
+	/**
 	 * Return request body with ID
 	 *
 	 * @return array
@@ -813,6 +1007,70 @@ abstract class ModelMongoDB
 		}
 
 		return $request;
+
+	}
+
+
+	/**
+	 * Property typing
+	 *
+	 * @param string $field - field
+	 * @param array  $attrs - attributes
+	 *
+	 * @return void
+	 */
+	protected function typification(string $field, array $attrs)
+	{
+
+		if (isset($this->{$field})) {
+
+			if ($attrs[0] === 'int') {
+
+				$this->{$field} = @intval($this->{$field});
+
+			} elseif ($attrs[0] === 'float') {
+
+				$this->{$field} = @floatval($this->{$field});
+
+			} elseif ($attrs[0] === 'bool' or $attrs[0] === 'boolean') {
+
+				$this->{$field} = @boolval($this->{$field});
+
+			} elseif ($attrs[0] === 'datetime') {
+
+				if (!is_string($this->{$field}) or @strtotime($this->{$field}) === false) {
+
+					$this->{$field} = self::valueDefault($attrs);
+
+				}
+
+			} elseif ($attrs[0] === 'object') {
+
+				if (!is_object($this->{$field})) {
+
+					$this->{$field} = self::valueDefault($attrs);
+
+				}
+
+			} elseif ($attrs[0] === 'array' or $attrs[0] === 'history') {
+
+				if (!is_array($this->{$field})) {
+
+					$this->{$field} = self::valueDefault($attrs);
+
+				}
+
+			} elseif ($attrs[0] === 'string') {
+
+				$this->{$field} = strval($this->{$field});
+
+			}
+
+		} else {
+
+			$this->$field = self::valueDefault($attrs);
+
+		}
 
 	}
 
@@ -1008,23 +1266,19 @@ abstract class ModelMongoDB
 	/**
 	 * Saving object to database
 	 *
-	 * @param array|null $data - assignment data
+	 * @param array $data - assignment data
 	 *
 	 * @return self
 	 * @throws Exception
 	 */
-	function save(array $data = null): self
+	function save(array $data = []): self
 	{
 
-		if (is_array($data) and count($data)) {
+		foreach ($data as $field => $value) {
 
-			foreach ($this::$fieldsModel as $field => $attrs) {
+			if (isset($this::$fieldsModel[$field])) {
 
-				if (isset($data[$field])) {
-
-					$this->{$field} = self::valueFromBase($data[$field], $attrs);
-
-				}
+				$this->{$field} = $value;
 
 			}
 
@@ -1043,85 +1297,9 @@ abstract class ModelMongoDB
 
 			}
 
-			if ($field === $this::$primaryKey) {
+			if (!$this->buildSaveData($field, $attrs, $data)) {
 
-				if ($this->isNew and in_array('required', $attrs, true)) {
-
-					if (isset($this->{$field})) {
-
-						if (is_string($this->{$field}) and mb_strlen($this->{$field}, 'utf-8') === 24) {
-
-							$data['_id'] = new ObjectId($this->{$field});
-
-						} else {
-
-							$data['_id'] = $this->{$field};
-
-						}
-
-					} else {
-
-						throw new Exception('Model validate error: $field ' . $field . ' required');
-
-					}
-
-				} else {
-
-					continue;
-
-				}
-
-			}
-
-			if (isset($this->{$field})) {
-
-				$data[$field] = $this->{$field};
-
-				if ($attrs[0] === 'int') {
-
-					$data[$field] = @intval($data[$field]);
-
-				} elseif ($attrs[0] === 'float') {
-
-					$data[$field] = @floatval($data[$field]);
-
-				} elseif ($attrs[0] === 'bool' or $attrs[0] === 'boolean') {
-
-					$data[$field] = @boolval($data[$field]);
-
-				} elseif ($attrs[0] === 'datetime') {
-
-					$data[$field] = new UTCDateTime(strtotime($data[$field]) * 1000);
-
-				} elseif ($attrs[0] === 'string') {
-
-					$data[$field] = strval($data[$field]);
-
-				}
-
-			} else {
-
-				$data[$field] = null;
-
-			}
-
-			if (in_array('timeCreate', $attrs, true) and ($this->isNew or empty($this->{$field}))) {
-
-				$now = time();
-				$this->{$field} = date('Y-m-d H:i:s', $now);
-				$data[$field] = new UTCDateTime($now * 1000);
-
-			} elseif (in_array('timeUpdate', $attrs, true)) {
-
-				$now = time();
-				$this->{$field} = date('Y-m-d H:i:s', $now);
-				$data[$field] = new UTCDateTime($now * 1000);
-
-			}
-
-			if (in_array('required', $attrs, true) and ($data[$field] === null or $data[$field] === '' or $data[$field] === false)) {
-
-				throw new Exception('Model validate error: $field ' . $field . ' required');
+				continue;
 
 			}
 
@@ -1171,7 +1349,7 @@ abstract class ModelMongoDB
 
 					} else {
 
-						$valueOld = strval($valueOld);
+						$valueOld = @strval($valueOld);
 
 					}
 
@@ -1185,7 +1363,7 @@ abstract class ModelMongoDB
 
 					} else {
 
-						$valueNew = strval($valueNew);
+						$valueNew = @strval($valueNew);
 
 					}
 
@@ -1265,6 +1443,8 @@ abstract class ModelMongoDB
 			}
 
 		}
+
+		$this->changedFields = [];
 
 		return $this;
 
@@ -1351,31 +1531,21 @@ abstract class ModelMongoDB
 
 				}
 
+				$this->typification($field, $fieldsModel[$field]);
+
 				$data[$field] = $this->{$field};
 
-				if (!is_null($data[$field])) {
+				if ($fieldsModel[$field][0] === 'datetime' and !empty($data[$field])) {
 
-					if ($fieldsModel[$field][0] === 'int') {
+					$data[$field] = new UTCDateTime(strtotime($data[$field]) * 1000);
 
-						$data[$field] = intval($data[$field]);
+				}
 
-					} elseif ($fieldsModel[$field][0] === 'float') {
+				if (in_array('timeUpdate', $fieldsModel[$field], true)) {
 
-						$data[$field] = floatval($data[$field]);
-
-					} elseif ($fieldsModel[$field][0] === 'bool' or $fieldsModel[$field][0] === 'boolean') {
-
-						$data[$field] = boolval($data[$field]);
-
-					} elseif ($fieldsModel[$field][0] === 'datetime') {
-
-						$data[$field] = new UTCDateTime(strtotime($data[$field]) * 1000);
-
-					} elseif ($fieldsModel[$field][0] === 'string') {
-
-						$data[$field] = strval($data[$field]);
-
-					}
+					$now = time();
+					$this->{$field} = date('Y-m-d H:i:s', $now);
+					$data[$field] = new UTCDateTime($now * 1000);
 
 				}
 
@@ -1584,21 +1754,15 @@ abstract class ModelMongoDB
 		$this->snapshot = new stdClass();
 		$this->snapshotUpdate = new stdClass();
 
-		if (count($data)) {
+		foreach ($this::$fieldsModel as $field => $attrs) {
 
-			foreach ($this::$fieldsModel as $field => $attrs) {
+			if (isset($data[$field])) {
 
-				$this->{$field} = self::valueFromBase($data[$field] ?? 'unIsset', $attrs);
-
-			}
-
-		} else {
-
-			foreach ($this::$fieldsModel as $field => $attrs) {
-
-				$this->{$field} = $this::valueFromBase('unIsset', $attrs);
+				$this->{$field} = $data[$field];
 
 			}
+
+			$this->typification($field, $attrs);
 
 		}
 
