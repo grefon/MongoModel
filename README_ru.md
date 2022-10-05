@@ -553,7 +553,7 @@ echo User::itemsDelete(['rating' => ['$lt' => 0]]);
 ### Метод itemsNew
 `YourModelClass::itemsNew(array $items, bool $returnID = true)`
 
-Пример: [examples/itemsNew.php]()
+Пример: [examples/itemsNew.php](examples/itemsNew.php)
 
 Создает несколько объектов и делает вставку `insertMany` в MongoDB.
 
