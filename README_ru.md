@@ -805,7 +805,7 @@ MongoDB::execute(User::getCollection(), 'updateMany', [
 ### Метод collectionInfo
 `MongoDB::collectionInfo(string $collection)`
 
-Пример: [examples/getCollection.php](examples/getCollection.php)
+Пример: [examples/collectionInfo.php](examples/collectionInfo.php)
 
 Возвращает информацию о коллекции.
 ```PHP
