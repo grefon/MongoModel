@@ -63,7 +63,7 @@ MongoModel работает с [MongoDB PHP Library](https://github.com/mongodb/
 ```JSON
 {
     "require": {
-        "grefon/mongo-model": "dev-main"
+        "grefon/mongo-model": "*"
     }
 }
 ```
