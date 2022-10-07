@@ -63,7 +63,7 @@ Edit `require` in your `composer.json`:
 ```JSON
 {
     "require": {
-        "grefon/mongo-model": "dev-main"
+        "grefon/mongo-model": "*"
     }
 }
 ```
