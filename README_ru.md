@@ -1,7 +1,8 @@
 # MongoModel
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/grefon/MongoModel/PHP%20Composer)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/grefon/MongoModel)
-![GitHub](https://img.shields.io/github/license/grefon/MongoModel)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/grefon/MongoModel/PHP%20Composer)](https://github.com/grefon/MongoModel/actions)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/grefon/MongoModel)](https://github.com/grefon/MongoModel/releases)
+[![Packagist PHP Version](https://img.shields.io/packagist/dependency-v/grefon/mongo-model/php)](https://php.net/)
+[![GitHub](https://img.shields.io/github/license/grefon/MongoModel)](LICENSE)
 
 [english](README.md)
 
