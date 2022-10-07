@@ -1,4 +1,7 @@
 # MongoModel
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/grefon/MongoModel/PHP%20Composer)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/grefon/MongoModel)
+![GitHub](https://img.shields.io/github/license/grefon/MongoModel)
 
 [english](README.md)
 
