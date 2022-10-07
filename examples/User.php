@@ -59,7 +59,7 @@ class User extends ModelMongoDB
 	 *
 	 * @return $this
 	 */
-	function changeEmail(string $email): self
+	public function changeEmail(string $email): self
 	{
 
 		$this->email = $email;
@@ -75,7 +75,7 @@ class User extends ModelMongoDB
 	 *
 	 * @return $this
 	 */
-	function resetRating(): self
+	public function resetRating(): self
 	{
 
 		$this->rating = 0;
@@ -94,7 +94,7 @@ class User extends ModelMongoDB
 	 *
 	 * @return $this
 	 */
-	function addPhone(int $code, int $phone): self
+	public function addPhone(int $code, int $phone): self
 	{
 
 		$item = new stdClass();
@@ -120,7 +120,7 @@ class User extends ModelMongoDB
 	 *
 	 * @return array
 	 */
-	function historyValuePhones($phones): array
+	protected function historyValuePhones($phones): array
 	{
 
 		$result = [];

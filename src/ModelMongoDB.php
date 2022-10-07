@@ -86,7 +86,11 @@ abstract class ModelMongoDB
 	static protected function isAssocArray(array $array): bool
 	{
 
-		if ([] === $array) return false;
+		if ([] === $array) {
+
+			return false;
+
+		}
 
 		return array_keys($array) !== range(0, count($array) - 1);
 
@@ -171,8 +175,9 @@ abstract class ModelMongoDB
 
 				if (!empty($value)) {
 
-					$json = @json_decode(@json_encode($value));
-					$value = is_object($value) ? $json : new stdClass();
+					$json = json_encode($value);
+					$json = is_string($json) ? json_decode($json) : null;
+					$value = is_object($json) ? $json : new stdClass();
 
 				}
 
@@ -180,8 +185,9 @@ abstract class ModelMongoDB
 
 				if (!empty($value)) {
 
-					$json = @json_decode(@json_encode($value));
-					$value = is_array($value) ? $json : [];
+					$json = json_encode($value);
+					$json = is_string($json) ? json_decode($json) : null;
+					$value = is_array($json) ? $json : [];
 
 				}
 
@@ -1271,7 +1277,7 @@ abstract class ModelMongoDB
 	 * @return self
 	 * @throws Exception
 	 */
-	function save(array $data = []): self
+	public function save(array $data = []): self
 	{
 
 		foreach ($data as $field => $value) {
@@ -1426,9 +1432,9 @@ abstract class ModelMongoDB
 
 			if ($this->checkRecordHistory($changes) and isset($this::$fieldsModel['history']) and count($changes)) {
 
-				$this->history[] = (object)[
+				$this->history[] = (object) [
 					'datetime' => date('Y-m-d H:i:s'),
-					'changes'  => (object)$changes
+					'changes'  => (object) $changes
 				];
 
 				$data['history'] = $this->history;
@@ -1578,7 +1584,7 @@ abstract class ModelMongoDB
 	 * @return bool
 	 * @throws Exception
 	 */
-	function delete(): bool
+	public function delete(): bool
 	{
 
 		if (!$this->isNew) {
@@ -1639,11 +1645,11 @@ abstract class ModelMongoDB
 	/**
 	 * Return field value from snapshot
 	 *
-	 * @param $field - field name
+	 * @param string $field - field name
 	 *
 	 * @return mixed
 	 */
-	public function getSnapshot($field)
+	public function getSnapshot(string $field)
 	{
 
 		return (isset($this->snapshot->{$field})) ? $this->snapshot->{$field} : null;
@@ -1654,11 +1660,11 @@ abstract class ModelMongoDB
 	/**
 	 * Return field value from snapshotUpdate
 	 *
-	 * @param $field - field name
+	 * @param string $field - field name
 	 *
 	 * @return mixed
 	 */
-	public function getSnapshotUpdate($field)
+	public function getSnapshotUpdate(string $field)
 	{
 
 		return (isset($this->snapshotUpdate->{$field})) ? $this->snapshotUpdate->{$field} : null;
