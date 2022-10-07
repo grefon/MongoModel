@@ -176,7 +176,7 @@ abstract class ModelMongoDB
 				if (!empty($value)) {
 
 					$json = json_encode($value);
-					$json = is_string($json) ? json_decode($json) : null;
+					$json = !empty($json) ? json_decode($json) : null;
 					$value = is_object($json) ? $json : new stdClass();
 
 				}
@@ -186,7 +186,7 @@ abstract class ModelMongoDB
 				if (!empty($value)) {
 
 					$json = json_encode($value);
-					$json = is_string($json) ? json_decode($json) : null;
+					$json = !empty($json) ? json_decode($json) : null;
 					$value = is_array($json) ? $json : [];
 
 				}
